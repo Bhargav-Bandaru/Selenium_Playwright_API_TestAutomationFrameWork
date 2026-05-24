@@ -1,0 +1,38 @@
+{
+  "students":[
+    {
+      "id": 1,
+      "name": "John Doe",
+      "age": 18,
+      "grade": "12th",
+      "subjects": [
+        "Math",
+        "Physics"
+      ,
+        "English"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "age": 17,
+      "grade": "11th",
+      "subjects": [
+        "Biology",
+        "Chemistry",
+        "History"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "David Johnson",
+      "age": 16,
+      "grade": "10th",
+      "subjects": [
+        "Computer Science",
+        "Spanish",
+        "Art"
+      ]
+    }
+  ]
+}
