@@ -76,7 +76,7 @@ jobs:
 
       # Step 10: Send Test Report Email
       - name: Send Test Report Email - BDD Cucumber Report
-        uses: bhargavbandaru/action-send-mail@v3
+        uses: Bhargav-Bandaru/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 587
