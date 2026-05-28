@@ -16,7 +16,7 @@ import java.util.Set;
  * SeleniumUtil — complete reusable Selenium WebDriver helper library.
  *
  * Categories covered:
- *   Click           — click, jsClick, doubleClick, rightClick
+ *   Click           — clickElement, jsClick, doubleClick, rightClick
  *   Input           — typeText, clearField, appendText, pressKey
  *   Dropdown        — selectByVisibleText/Value/Index, getAllDropdownOptions
  *   Frame           — switchToFrame, switchToDefaultContent, switchToParentFrame
@@ -28,45 +28,88 @@ import java.util.Set;
  *   State checks    — isDisplayed, isEnabled, isSelected, isPresent
  *   Text/Attribute  — getText, getAttribute, getInputValue, getAllTexts, getElementCount
  *   JavaScript      — jsClick, executeScript, highlightElement, setValueByJS, waitForPageLoad
+ *
+ * FIX APPLIED:
+ *   Private helper method renamed from wait() → getWait().
+ *   Reason: Every Java class inherits wait() from java.lang.Object (final method
+ *   used for thread synchronization). Declaring a method also named wait() with a
+ *   different return type (WebDriverWait instead of void) causes a compiler error:
+ *   "attempting to use incompatible return type". Renaming to getWait() eliminates
+ *   the conflict entirely since Object has no getWait() method.
  */
 public class SeleniumUtil {
 
     private static final Logger log = LogManager.getLogger(SeleniumUtil.class);
     private static final int DEFAULT_WAIT = 15;
 
-    private static WebDriver driver()  { return DriverFactory.getDriver(); }
-    private static JavascriptExecutor js() { return (JavascriptExecutor) driver(); }
-    private static WebDriverWait wait() {
+    // ── PRIVATE INTERNAL HELPERS ───────────────────────────────────────────────
+
+    private static WebDriver driver() {
+        return DriverFactory.getDriver();
+    }
+
+    private static JavascriptExecutor js() {
+        return (JavascriptExecutor) driver();
+    }
+
+    /**
+     * Returns a WebDriverWait instance with the default timeout.
+     *
+     * RENAMED from wait() to getWait() to avoid conflict with
+     * java.lang.Object.wait() which is inherited by every Java class.
+     * Object.wait() is declared as:  public final void wait()
+     * Our method returns WebDriverWait — incompatible return type = compile error.
+     */
+    private static WebDriverWait getWait() {
         return new WebDriverWait(driver(), Duration.ofSeconds(DEFAULT_WAIT));
     }
-    private static WebElement waitClickable(By by) {
-        return wait().until(ExpectedConditions.elementToBeClickable(by));
+
+    /** Returns a WebDriverWait with a custom timeout in seconds. */
+    private static WebDriverWait getWait(int timeoutSeconds) {
+        return new WebDriverWait(driver(), Duration.ofSeconds(timeoutSeconds));
     }
+
+    private static WebElement waitClickable(By by) {
+        return getWait().until(ExpectedConditions.elementToBeClickable(by));
+    }
+
     private static WebElement waitVisible(By by) {
-        return wait().until(ExpectedConditions.visibilityOfElementLocated(by));
+        return getWait().until(ExpectedConditions.visibilityOfElementLocated(by));
     }
 
     // ── CLICK HELPERS ──────────────────────────────────────────────────────────
 
-    /** Standard click — waits for element to be clickable first. */
+    /**
+     * Standard click — waits for element to be clickable before clicking.
+     * Use this for all button and link clicks.
+     */
     public static void clickElement(By locator) {
         log.info("Click: {}", locator);
         waitClickable(locator).click();
     }
 
-    /** JavaScript click — bypasses overlays/interceptors. Use as last resort. */
+    /**
+     * JavaScript click — bypasses overlays and ElementClickInterceptedException.
+     * Use as a last resort when regular click is intercepted by another element.
+     */
     public static void jsClick(By locator) {
         log.info("JS Click: {}", locator);
         js().executeScript("arguments[0].click();", waitVisible(locator));
     }
 
-    /** Double-click using Actions class. */
+    /**
+     * Double-click using Selenium Actions class.
+     * Use for elements that require a double-click event (e.g. inline edit).
+     */
     public static void doubleClick(By locator) {
         log.info("Double-click: {}", locator);
         new Actions(driver()).doubleClick(waitClickable(locator)).perform();
     }
 
-    /** Right-click (context menu) using Actions class. */
+    /**
+     * Right-click to open the browser context menu using Actions.
+     * Use when testing right-click specific functionality.
+     */
     public static void rightClick(By locator) {
         log.info("Right-click: {}", locator);
         new Actions(driver()).contextClick(waitVisible(locator)).perform();
@@ -74,7 +117,10 @@ public class SeleniumUtil {
 
     // ── INPUT HELPERS ──────────────────────────────────────────────────────────
 
-    /** Clear existing value then type new text into an input field. */
+    /**
+     * Clears the existing value and types new text into an input field.
+     * Waits for the element to be visible before interacting.
+     */
     public static void typeText(By locator, String text) {
         log.info("Type '{}' → {}", text, locator);
         WebElement el = waitVisible(locator);
@@ -82,14 +128,18 @@ public class SeleniumUtil {
         el.sendKeys(text);
     }
 
-    /** Append text without clearing first. */
+    /**
+     * Types text WITHOUT clearing first — appends to existing field value.
+     */
     public static void appendText(By locator, String text) {
+        log.info("Append '{}' → {}", text, locator);
         waitVisible(locator).sendKeys(text);
     }
 
     /**
-     * Clear a field using Ctrl+A then Delete — more reliable than clear()
-     * for React/Angular components that ignore element.clear().
+     * Clears a field using Ctrl+A then Delete keyboard shortcut.
+     * More reliable than element.clear() for React and Angular controlled inputs
+     * that override the default clear behaviour.
      */
     public static void clearField(By locator) {
         log.info("Clear field: {}", locator);
@@ -98,306 +148,477 @@ public class SeleniumUtil {
         el.sendKeys(Keys.DELETE);
     }
 
-    /** Send a specific keyboard key to an element. Example: Keys.ENTER, Keys.TAB. */
+    /**
+     * Sends a specific keyboard key to the target element.
+     * Example: SeleniumUtil.pressKey(By.id("search"), Keys.ENTER);
+     *          SeleniumUtil.pressKey(By.id("field"),  Keys.TAB);
+     */
     public static void pressKey(By locator, Keys key) {
-        log.info("Press {} on: {}", key, locator);
+        log.info("Press key '{}' on: {}", key, locator);
         waitVisible(locator).sendKeys(key);
     }
 
     // ── DROPDOWN HELPERS ───────────────────────────────────────────────────────
 
-    /** Select &lt;select&gt; dropdown option by visible text. */
+    /**
+     * Selects a standard HTML &lt;select&gt; dropdown option by its visible text.
+     * Example: selectByVisibleText(By.id("country"), "India")
+     */
     public static void selectByVisibleText(By locator, String text) {
-        log.info("Select by text '{}' from: {}", text, locator);
+        log.info("Select by visible text '{}' from: {}", text, locator);
         new Select(waitVisible(locator)).selectByVisibleText(text);
     }
 
-    /** Select &lt;select&gt; dropdown option by value attribute. */
+    /**
+     * Selects a dropdown option by its value attribute.
+     * Example: selectByValue(By.id("country"), "IN")
+     */
     public static void selectByValue(By locator, String value) {
         log.info("Select by value '{}' from: {}", value, locator);
         new Select(waitVisible(locator)).selectByValue(value);
     }
 
-    /** Select &lt;select&gt; dropdown option by zero-based index. */
+    /**
+     * Selects a dropdown option by its zero-based index position.
+     * Example: selectByIndex(By.id("month"), 0) selects the first option.
+     */
     public static void selectByIndex(By locator, int index) {
         log.info("Select by index {} from: {}", index, locator);
         new Select(waitVisible(locator)).selectByIndex(index);
     }
 
-    /** Get the currently selected option text from a dropdown. */
+    /**
+     * Returns the text of the currently selected dropdown option.
+     */
     public static String getSelectedOption(By locator) {
-        return new Select(waitVisible(locator)).getFirstSelectedOption().getText();
+        String selected = new Select(waitVisible(locator))
+                .getFirstSelectedOption().getText();
+        log.info("Selected option: '{}'", selected);
+        return selected;
     }
 
-    /** Get all option texts from a dropdown as a List. */
+    /**
+     * Returns all option texts from a dropdown as a List of Strings.
+     * Useful for asserting dropdown contents in tests.
+     */
     public static List<String> getAllDropdownOptions(By locator) {
         List<String> texts = new ArrayList<>();
-        new Select(waitVisible(locator)).getOptions().forEach(o -> texts.add(o.getText().trim()));
+        new Select(waitVisible(locator)).getOptions()
+                .forEach(o -> texts.add(o.getText().trim()));
+        log.info("Dropdown options: {}", texts);
         return texts;
     }
 
     // ── FRAME HELPERS ──────────────────────────────────────────────────────────
 
-    /** Switch into an iframe — waits until frame is available. */
+    /**
+     * Switches WebDriver context into an iframe identified by a locator.
+     * Waits until the frame is available before switching.
+     * Always call switchToDefaultContent() after finishing with iframe.
+     */
     public static void switchToFrame(By frameLocator) {
         log.info("Switch to frame: {}", frameLocator);
-        wait().until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(frameLocator));
+        getWait().until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(frameLocator));
     }
 
-    /** Switch into an iframe by name or id attribute. */
+    /**
+     * Switches into an iframe identified by its name or id attribute value.
+     */
     public static void switchToFrameByNameOrId(String nameOrId) {
-        log.info("Switch to frame by name/id: {}", nameOrId);
-        wait().until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
+        log.info("Switch to frame by name/id: '{}'", nameOrId);
+        getWait().until(ExpectedConditions.frameToBeAvailableAndSwitchToIt(nameOrId));
     }
 
-    /** Switch into an iframe by zero-based index. */
+    /**
+     * Switches into an iframe by its zero-based index on the page.
+     */
     public static void switchToFrameByIndex(int index) {
+        log.info("Switch to frame by index: {}", index);
         driver().switchTo().frame(index);
     }
 
-    /** Exit all frames — return to main page context. */
+    /**
+     * Exits all frames and returns the driver context to the main page.
+     * Always call this after finishing interactions inside an iframe.
+     */
     public static void switchToDefaultContent() {
-        log.info("Switch to default content");
+        log.info("Switch back to default content (exit all frames)");
         driver().switchTo().defaultContent();
     }
 
-    /** Switch to parent frame (one level up from nested frame). */
+    /**
+     * Switches to the parent frame — one level up from a nested frame.
+     */
     public static void switchToParentFrame() {
+        log.info("Switch to parent frame");
         driver().switchTo().parentFrame();
     }
 
     // ── ALERT HELPERS ──────────────────────────────────────────────────────────
 
-    /** Wait for alert then accept it (click OK). */
+    /**
+     * Waits for a browser alert to appear then accepts it (clicks OK).
+     */
     public static void acceptAlert() {
-        log.info("Accept alert");
-        wait().until(ExpectedConditions.alertIsPresent()).accept();
+        log.info("Accept alert (click OK)");
+        getWait().until(ExpectedConditions.alertIsPresent()).accept();
     }
 
-    /** Wait for alert then dismiss it (click Cancel). */
+    /**
+     * Waits for a browser alert then dismisses it (clicks Cancel).
+     */
     public static void dismissAlert() {
-        log.info("Dismiss alert");
-        wait().until(ExpectedConditions.alertIsPresent()).dismiss();
+        log.info("Dismiss alert (click Cancel)");
+        getWait().until(ExpectedConditions.alertIsPresent()).dismiss();
     }
 
-    /** Get the text shown inside the current alert dialog. */
+    /**
+     * Returns the text message displayed inside the current browser alert.
+     */
     public static String getAlertText() {
-        String text = wait().until(ExpectedConditions.alertIsPresent()).getText();
+        String text = getWait().until(ExpectedConditions.alertIsPresent()).getText();
         log.info("Alert text: '{}'", text);
         return text;
     }
 
-    /** Type text into a prompt alert then accept it. */
+    /**
+     * Types text into a prompt alert dialog then accepts it.
+     * Use for window.prompt() alerts that require text input.
+     */
     public static void typeInAlert(String text) {
-        log.info("Type in alert: {}", text);
-        Alert alert = wait().until(ExpectedConditions.alertIsPresent());
+        log.info("Type '{}' in alert then accept", text);
+        Alert alert = getWait().until(ExpectedConditions.alertIsPresent());
         alert.sendKeys(text);
         alert.accept();
     }
 
     // ── WINDOW / TAB HELPERS ───────────────────────────────────────────────────
 
-    /** Get the current browser window handle. */
+    /**
+     * Returns the handle of the currently focused browser window/tab.
+     * Capture this before performing an action that opens a new window.
+     */
     public static String getCurrentWindowHandle() {
         return driver().getWindowHandle();
     }
 
-    /** Switch to the newly opened window/tab (not the original handle). */
+    /**
+     * Switches driver focus to a newly opened window or tab.
+     * Pass the original handle (captured before the new window opened)
+     * and this method will switch to whichever handle is not the original.
+     *
+     * Example:
+     *   String original = SeleniumUtil.getCurrentWindowHandle();
+     *   // click button that opens new tab
+     *   SeleniumUtil.switchToNewWindow(original);
+     *   // now interacting in new tab
+     */
     public static void switchToNewWindow(String originalHandle) {
-        log.info("Switch to new window");
+        log.info("Switching to new window/tab");
         for (String handle : driver().getWindowHandles()) {
             if (!handle.equals(originalHandle)) {
                 driver().switchTo().window(handle);
+                log.info("Switched to new window: {}", handle);
                 return;
             }
         }
-        throw new RuntimeException("No new window found to switch to");
+        throw new RuntimeException(
+                "No new window found. Only one window handle exists.");
     }
 
-    /** Switch to a specific window by its handle string. */
+    /**
+     * Switches driver focus to a specific window by its handle string.
+     */
     public static void switchToWindow(String windowHandle) {
+        log.info("Switch to window: {}", windowHandle);
         driver().switchTo().window(windowHandle);
     }
 
-    /** Close current window and switch back to the original. */
+    /**
+     * Closes the current window/tab and switches back to the original window.
+     */
     public static void closeCurrentWindowAndSwitch(String originalHandle) {
         driver().close();
         driver().switchTo().window(originalHandle);
-        log.info("Closed tab and returned to original window");
+        log.info("Closed current tab and switched back to original window");
     }
 
-    /** Return count of open browser windows/tabs. */
+    /**
+     * Returns the total count of open browser windows and tabs.
+     */
     public static int getWindowCount() {
         return driver().getWindowHandles().size();
     }
 
     // ── SCROLL HELPERS ─────────────────────────────────────────────────────────
 
-    /** Scroll element into the centre of the viewport. */
+    /**
+     * Scrolls the matching element into the centre of the visible viewport.
+     * Use before clicking elements that may be below the fold.
+     */
     public static void scrollIntoView(By locator) {
         log.info("Scroll into view: {}", locator);
-        js().executeScript("arguments[0].scrollIntoView({block:'center'});",
-                           driver().findElement(locator));
+        js().executeScript(
+                "arguments[0].scrollIntoView({block:'center', inline:'nearest'});",
+                driver().findElement(locator));
     }
 
-    /** Scroll a WebElement you already hold into the viewport. */
+    /**
+     * Scrolls a WebElement reference into the visible viewport.
+     * Use when you already have the WebElement object from a previous findElement.
+     */
     public static void scrollIntoView(WebElement element) {
-        js().executeScript("arguments[0].scrollIntoView({block:'center'});", element);
+        js().executeScript(
+                "arguments[0].scrollIntoView({block:'center', inline:'nearest'});",
+                element);
     }
 
-    /** Scroll to the very top of the page. */
+    /**
+     * Scrolls the page to the very top (position 0,0).
+     */
     public static void scrollToTop() {
-        js().executeScript("window.scrollTo(0,0);");
+        log.info("Scroll to page top");
+        js().executeScript("window.scrollTo(0, 0);");
     }
 
-    /** Scroll to the very bottom of the page. */
+    /**
+     * Scrolls the page to the very bottom (full document height).
+     */
     public static void scrollToBottom() {
-        js().executeScript("window.scrollTo(0,document.body.scrollHeight);");
+        log.info("Scroll to page bottom");
+        js().executeScript("window.scrollTo(0, document.body.scrollHeight);");
     }
 
-    /** Scroll down by a specific number of pixels. */
+    /**
+     * Scrolls down the page by a specific number of pixels from current position.
+     * Use a negative value to scroll upward.
+     */
     public static void scrollByPixels(int pixels) {
-        js().executeScript("window.scrollBy(0," + pixels + ");");
+        log.info("Scroll by {} pixels", pixels);
+        js().executeScript("window.scrollBy(0, " + pixels + ");");
     }
 
-    // ── DRAG AND DROP ─────────────────────────────────────────────────────────
+    // ── DRAG AND DROP ──────────────────────────────────────────────────────────
 
-    /** Drag source element and drop onto target element. */
+    /**
+     * Drags the source element and drops it onto the target element using Actions.
+     * Both elements must be visible and interactable.
+     */
     public static void dragAndDrop(By sourceLocator, By targetLocator) {
-        log.info("Drag {} → drop {}", sourceLocator, targetLocator);
+        log.info("Drag '{}' and drop onto '{}'", sourceLocator, targetLocator);
         new Actions(driver())
-            .dragAndDrop(waitVisible(sourceLocator), waitVisible(targetLocator))
-            .perform();
+                .dragAndDrop(waitVisible(sourceLocator), waitVisible(targetLocator))
+                .perform();
     }
 
-    /** Drag element by x/y pixel offset from its current position. */
+    /**
+     * Drags an element by a pixel offset (x, y) from its current position.
+     * Use when there is no specific drop target element — just a coordinate.
+     */
     public static void dragAndDropByOffset(By sourceLocator, int xOffset, int yOffset) {
-        log.info("Drag {} by ({},{})", sourceLocator, xOffset, yOffset);
+        log.info("Drag '{}' by offset ({}, {})", sourceLocator, xOffset, yOffset);
         new Actions(driver())
-            .dragAndDropBy(waitVisible(sourceLocator), xOffset, yOffset)
-            .perform();
+                .dragAndDropBy(waitVisible(sourceLocator), xOffset, yOffset)
+                .perform();
     }
 
     // ── HOVER / MOUSE ─────────────────────────────────────────────────────────
 
-    /** Hover the mouse over an element (triggers CSS :hover and mouseover events). */
+    /**
+     * Moves the mouse pointer over an element to trigger CSS :hover effects
+     * and mouseover events. Commonly used to reveal hidden sub-menus.
+     */
     public static void hoverOverElement(By locator) {
-        log.info("Hover: {}", locator);
+        log.info("Hover over: {}", locator);
         new Actions(driver()).moveToElement(waitVisible(locator)).perform();
     }
 
-    /** Hover over one element then click another (e.g. mega-menu navigation). */
+    /**
+     * Hovers over one element then clicks another in a single Actions chain.
+     * Use for navigation menus where hovering reveals a clickable sub-item.
+     *
+     * Example:
+     *   SeleniumUtil.hoverAndClick(By.id("menu-products"), By.id("menu-laptops"));
+     */
     public static void hoverAndClick(By hoverLocator, By clickLocator) {
-        log.info("Hover {} → click {}", hoverLocator, clickLocator);
+        log.info("Hover '{}' then click '{}'", hoverLocator, clickLocator);
         new Actions(driver())
-            .moveToElement(waitVisible(hoverLocator))
-            .click(waitClickable(clickLocator))
-            .perform();
+                .moveToElement(waitVisible(hoverLocator))
+                .click(waitClickable(clickLocator))
+                .perform();
     }
 
     // ── STATE VERIFIERS ────────────────────────────────────────────────────────
 
-    /** True if element is visible on screen. */
+    /**
+     * Returns true if the element is present in DOM AND currently visible on screen.
+     * Returns false if the element is absent or has display:none / visibility:hidden.
+     */
     public static boolean isDisplayed(By locator) {
-        try { return driver().findElement(locator).isDisplayed(); }
-        catch (NoSuchElementException e) { return false; }
+        try {
+            return driver().findElement(locator).isDisplayed();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
-    /** True if element is enabled (not disabled/greyed out). */
+    /**
+     * Returns true if the element is enabled (not disabled or greyed out).
+     * Use to verify form fields and buttons before interacting with them.
+     */
     public static boolean isEnabled(By locator) {
-        try { return driver().findElement(locator).isEnabled(); }
-        catch (NoSuchElementException e) { return false; }
+        try {
+            return driver().findElement(locator).isEnabled();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
-    /** True if checkbox or radio button is checked/selected. */
+    /**
+     * Returns true if a checkbox or radio button is currently checked/selected.
+     */
     public static boolean isSelected(By locator) {
-        try { return driver().findElement(locator).isSelected(); }
-        catch (NoSuchElementException e) { return false; }
+        try {
+            return driver().findElement(locator).isSelected();
+        } catch (NoSuchElementException e) {
+            return false;
+        }
     }
 
-    /** True if element is present in DOM (even if hidden). */
+    /**
+     * Returns true if the element exists anywhere in the DOM — even if hidden.
+     * Faster than isDisplayed() when you only need to confirm DOM presence.
+     */
     public static boolean isPresent(By locator) {
         return !driver().findElements(locator).isEmpty();
     }
 
     // ── TEXT / ATTRIBUTE GETTERS ───────────────────────────────────────────────
 
-    /** Get visible text of an element. */
+    /**
+     * Returns the visible inner text of an element (trimmed of whitespace).
+     */
     public static String getText(By locator) {
         return waitVisible(locator).getText().trim();
     }
 
-    /** Get any HTML attribute value. Example: getAttribute(By.id("btn"), "class") */
+    /**
+     * Returns the value of any HTML attribute on the element.
+     * Example: getAttribute(By.id("link"), "href")
+     *          getAttribute(By.id("input"), "placeholder")
+     *          getAttribute(By.id("btn"),   "class")
+     */
     public static String getAttribute(By locator, String attribute) {
         return waitVisible(locator).getAttribute(attribute);
     }
 
-    /** Get the value attribute of an input field. */
+    /**
+     * Returns the current value of an input field via the value attribute.
+     * Equivalent to getAttribute(locator, "value") — provided as a convenience.
+     */
     public static String getInputValue(By locator) {
         return getAttribute(locator, "value");
     }
 
-    /** Get the current page title. */
+    /**
+     * Returns the title of the current page as a String.
+     */
     public static String getPageTitle() {
         return driver().getTitle();
     }
 
-    /** Get the current page URL. */
+    /**
+     * Returns the full URL of the current page.
+     */
     public static String getCurrentUrl() {
         return driver().getCurrentUrl();
     }
 
-    /** Get text of all matching elements (e.g. all table rows, all list items). */
+    /**
+     * Returns the visible text of ALL elements matching the locator as a List.
+     * Useful for asserting the contents of a table column, list, or set of labels.
+     * Example: getAllTexts(By.cssSelector("table tbody tr td:first-child"))
+     */
     public static List<String> getAllTexts(By locator) {
         List<String> texts = new ArrayList<>();
         driver().findElements(locator).forEach(e -> texts.add(e.getText().trim()));
         return texts;
     }
 
-    /** Count of elements matching a locator. */
+    /**
+     * Returns the count of all elements on the page matching the given locator.
+     */
     public static int getElementCount(By locator) {
         return driver().findElements(locator).size();
     }
 
     // ── JAVASCRIPT EXECUTOR ────────────────────────────────────────────────────
 
-    /** Execute arbitrary JavaScript. Returns script return value. */
+    /**
+     * Executes arbitrary JavaScript in the current browser context.
+     * Returns the script's return value (cast to the appropriate type as needed).
+     * Example: SeleniumUtil.executeScript("return document.title;")
+     */
     public static Object executeScript(String script, Object... args) {
+        log.debug("Execute JS: {}", script);
         return js().executeScript(script, args);
     }
 
-    /** Highlight element with red border + yellow background for debugging. */
+    /**
+     * Highlights an element with a red border and yellow background.
+     * Useful for visual debugging — call just before taking a screenshot.
+     */
     public static void highlightElement(By locator) {
         js().executeScript(
-            "arguments[0].style.border='3px solid red';" +
-            "arguments[0].style.background='yellow';",
-            driver().findElement(locator));
+                "arguments[0].style.border='3px solid red';" +
+                        "arguments[0].style.background='yellow';",
+                driver().findElement(locator));
     }
 
     /**
-     * Set an input value via JavaScript — works for readonly fields,
-     * date pickers, and React/Angular controlled inputs.
+     * Sets the value of an input field directly via JavaScript.
+     * Use for date pickers, readonly fields, and React/Angular controlled inputs
+     * where Selenium's sendKeys() is blocked or ignored by the component.
      */
     public static void setValueByJS(By locator, String value) {
-        log.info("JS setValue '{}' → {}", value, locator);
-        js().executeScript("arguments[0].value='" + value + "';",
-                           driver().findElement(locator));
-    }
-
-    /** Get an input field value via JavaScript (reads actual DOM value). */
-    public static String getValueByJS(By locator) {
-        return (String) js().executeScript("return arguments[0].value;",
-                                           driver().findElement(locator));
+        log.info("JS setValueByJS '{}' on: {}", value, locator);
+        js().executeScript(
+                "arguments[0].value='" + value + "';",
+                driver().findElement(locator));
     }
 
     /**
-     * Wait for document.readyState === 'complete'.
-     * Call after navigation to ensure full page load before interaction.
+     * Reads the current value of an input field directly from the DOM via JS.
+     * More reliable than getAttribute("value") for dynamically updated inputs.
      */
-    public static void waitForPageLoad() {
-        new WebDriverWait(driver(), Duration.ofSeconds(DEFAULT_WAIT)).until(
-            d -> js().executeScript("return document.readyState").equals("complete"));
+    public static String getValueByJS(By locator) {
+        return (String) js().executeScript(
+                "return arguments[0].value;",
+                driver().findElement(locator));
     }
 
+    /**
+     * Waits until the browser's document.readyState equals 'complete'.
+     * Call this after page navigation or form submission to ensure the page
+     * has fully loaded before the next interaction.
+     */
+    public static void waitForPageLoad() {
+        log.info("Waiting for page load (document.readyState == complete)");
+        getWait().until(d ->
+                js().executeScript("return document.readyState").equals("complete"));
+    }
+
+    /**
+     * Waits until the page is loaded with a custom timeout.
+     *
+     * @param timeoutSeconds max seconds to wait for page load completion
+     */
+    public static void waitForPageLoad(int timeoutSeconds) {
+        log.info("Waiting for page load — timeout: {}s", timeoutSeconds);
+        getWait(timeoutSeconds).until(d ->
+                js().executeScript("return document.readyState").equals("complete"));
+    }
+
+    // Private constructor — utility class, never instantiated
     private SeleniumUtil() {}
 }

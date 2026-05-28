@@ -1,5 +1,6 @@
 package com.expertrise.automation.utils;
 
+import com.expertrise.automation.config.ConfigManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -42,9 +43,9 @@ public class DatabaseUtil {
      */
     public static void connect() {
         connect(
-            ConfigManager.get("db.url",      "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1"),
-            ConfigManager.get("db.username", "sa"),
-            ConfigManager.get("db.password", "")
+                ConfigManager.get("db.url",      "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1"),
+                ConfigManager.get("db.username", "sa"),
+                ConfigManager.get("db.password", "")
         );
     }
 
@@ -207,8 +208,8 @@ public class DatabaseUtil {
             params.add(e.getValue());
         }
         return executeUpdate(
-            "INSERT INTO " + tableName + " (" + cols + ") VALUES (" + vals + ")",
-            params.toArray()
+                "INSERT INTO " + tableName + " (" + cols + ") VALUES (" + vals + ")",
+                params.toArray()
         );
     }
 
@@ -271,8 +272,8 @@ public class DatabaseUtil {
     private static void ensureConnected() {
         if (!isConnected())
             throw new IllegalStateException(
-                "No active DB connection. Call DatabaseUtil.connect() before queries. " +
-                "Typically called in @BeforeMethod.");
+                    "No active DB connection. Call DatabaseUtil.connect() before queries. " +
+                            "Typically called in @BeforeMethod.");
     }
 
     private DatabaseUtil() {}
