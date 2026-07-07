@@ -128,29 +128,29 @@ mvn allure:serve
 
 ## Reports
 
-| Report | Location | When Generated |
-|--------|----------|----------------|
-| Cucumber HTML | `target/cucumber-report/` | `mvn verify` |
-| Extent Reports | `target/extent-reports/` | After each test run |
-| Allure | `target/allure-report/` | `mvn allure:report` |
-| Test logs | `target/logs/framework.log` | During test run |
-| Screenshots | `target/screenshots/` | On test failure |
+| Report         | Location                    | When Generated      |
+|----------------|-----------------------------|---------------------|
+| Cucumber HTML  | `target/cucumber-report/`   | `mvn verify`        |
+| Extent Reports | `target/extent-reports/`    | After each test run |
+| Allure         | `target/allure-report/`     | `mvn allure:report` |
+| Test logs      | `target/logs/framework.log` | During test run     |
+| Screenshots    | `target/screenshots/`       | On test failure     |
 
 ---
 
 ## Tag Strategy
 
-| Tag | Purpose | Runs In |
-|-----|---------|---------|
-| `@smoke` | Critical path — fast feedback | Every CI push |
-| `@regression` | Full suite | Nightly / release |
-| `@ui` | Selenium WebDriver tests | With Chrome/Firefox |
-| `@playwright` | Playwright tests | With Playwright browsers |
-| `@api` | RestAssured API tests | No browser needed |
-| `@mockService` | Tests against json-server | Needs json-server running |
-| `@login` | Login/auth scenarios | Subset of @ui |
-| `@negative` | Negative / error path | Subset of @regression |
-| `@crud` | CRUD operation tests | Subset of @api |
+| Tag            | Purpose                       | Runs In                   |
+|----------------|-------------------------------|---------------------------|
+| `@smoke`       | Critical path — fast feedback | Every CI push             |
+| `@regression`  | Full suite                    | Nightly / release         |
+| `@ui`          | Selenium WebDriver tests      | With Chrome/Firefox       |
+| `@playwright`  | Playwright tests              | With Playwright browsers  |
+| `@api`         | RestAssured API tests         | No browser needed         |
+| `@mockService` | Tests against json-server     | Needs json-server running |
+| `@login`       | Login/auth scenarios          | Subset of @ui             |
+| `@negative`    | Negative / error path         | Subset of @regression     |
+| `@crud`        | CRUD operation tests          | Subset of @api            |
 
 ---
 
@@ -196,11 +196,11 @@ The GitHub Actions pipeline (`.github/workflows/bdd-pipeline.yml`) runs:
 5. **Email Notification** — HTML report attached, sent to configured recipient
 
 ### Required GitHub Secrets
-| Secret | Value |
-|--------|-------|
-| `GMAIL_USERNAME` | your-email@gmail.com |
+| Secret               | Value                                     |
+|----------------------|-------------------------------------------|
+| `GMAIL_USERNAME`     | your-email@gmail.com                      |
 | `GMAIL_APP_PASSWORD` | Gmail App Password (not regular password) |
-| `TO_EMAIL` | recipient@email.com |
+| `TO_EMAIL`           | recipient@email.com                       |
 
 ---
 

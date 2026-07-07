@@ -35,9 +35,9 @@ public class Hooks {
     // ──────────────────────────────────────────────────────────────────────────
 
     /** Fires before every @ui scenario — initialises Selenium WebDriver. */
-    @Before(value = "@ui or @login or @register or @products or @cart or @checkout", order = 1)
+    @Before(value = "@ui or @login or @register or @products or @cart or @checkout or @practice", order = 1)
     public void beforeSeleniumScenario(Scenario scenario) {
-        log.info("▶ BEFORE (Selenium) — Scenario: [{}]", scenario.getName());
+        log.info(" BEFORE (Selenium) — Scenario: [{}]", scenario.getName());
         ExtentReportManager.createTest(scenario.getName(), String.join(", ", scenario.getSourceTagNames()));
         String browser = ConfigManager.getBrowser();
         DriverFactory.initSeleniumDriver(browser);
@@ -46,9 +46,9 @@ public class Hooks {
     }
 
     /** Fires after every @ui scenario — screenshot on fail, quit driver. */
-    @After(value = "@ui or @login or @register or @products or @cart or @checkout", order = 1)
+    @After(value = "@ui or @login or @register or @products or @cart or @checkout or @practice", order = 1)
     public void afterSeleniumScenario(Scenario scenario) {
-        log.info("■ AFTER (Selenium) — Scenario: [{}] Status: {}", scenario.getName(), scenario.getStatus());
+        log.info("AFTER (Selenium) — Scenario: [{}] Status: {}", scenario.getName(), scenario.getStatus());
         try {
             if (scenario.isFailed()) {
                 log.error("Scenario FAILED — capturing screenshot");
@@ -56,6 +56,7 @@ public class Hooks {
                 if (screenshot != null) {
                     scenario.attach(screenshot, "image/png", "Failure Screenshot — " + scenario.getName());
                     ExtentReportManager.attachScreenshotOnFailure(scenario.getName(), screenshot);
+
                 }
                 ExtentReportManager.failTest(scenario.getName());
             } else {

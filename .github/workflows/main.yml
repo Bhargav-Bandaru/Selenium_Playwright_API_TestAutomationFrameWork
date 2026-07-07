@@ -1,4 +1,4 @@
-name: "TestAutomation Runner"
+name: "Expert rise TestAutomation manual Runner"
 
 on:
   push:
@@ -62,7 +62,7 @@ jobs:
 
       # Step 8: Run Maven tests with tags
       - name: Run Maven Tests
-#        run: mvn clean test -Dcucumber.filter.tags="${{ github.event.inputs.TestTags }}"
+#
         run: mvn clean test -Dtag="${{ github.event.inputs.TestTags }}"
 
       # Step 9: Upload Cucumber report (artifact)
@@ -73,17 +73,3 @@ jobs:
         with:
           name: Cucumber_Reports
           path: "target/cucumber-reports.html"
-
-      # Step 10: Send Test Report Email
-      - name: Send Test Report Email - BDD Cucumber Report
-        uses: Bhargav-Bandaru/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 587
-          username: ${{ secrets.GMAIL_USERNAME }}
-          password: ${{ secrets.GMAIL_APP_PASSWORD }}
-          from: ${{ secrets.GMAIL_USERNAME }}
-          to: ${{ secrets.TO_EMAIL }}
-          subject: "API Test Report - BDD Cucumber Report"
-          body: "Please find the attached BDD Cucumber test report."
-          attachments:  target/cucumber-reports.html

@@ -35,6 +35,10 @@ import org.junit.platform.suite.api.*;
     value = "com.expertrise.automation.stepDefinitions," +
             "com.expertrise.automation.hooks"
 )
+@ConfigurationParameter(
+        key   = Constants.FILTER_TAGS_PROPERTY_NAME,
+        value = "@practice"
+)
 public class RunCucumberTest {
     // Annotations drive everything — no body needed
 }

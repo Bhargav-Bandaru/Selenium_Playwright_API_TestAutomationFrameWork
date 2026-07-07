@@ -116,4 +116,6 @@ public class LoginStepDefinitions {
         log.info("Step: verifying email already registered error");
         loginActions.verifyEmailAlreadyRegisteredError();
     }
+
+
 }

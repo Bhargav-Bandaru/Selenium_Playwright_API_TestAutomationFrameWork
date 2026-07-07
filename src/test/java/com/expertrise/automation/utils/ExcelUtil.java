@@ -199,7 +199,12 @@ public class ExcelUtil {
 
             for (int i = 0; i < headers.size(); i++) sheet.autoSizeColumn(i);
 
-            new File(filePath).getParentFile().mkdirs();
+            // ensure parent directories exist
+            File parent = new File(filePath).getParentFile();
+            if (parent != null && !parent.exists()) {
+                boolean created = parent.mkdirs();
+                if (!created) log.warn("Failed to create parent directories for: {}", filePath);
+            }
             try (FileOutputStream fos = new FileOutputStream(filePath)) {
                 wb.write(fos);
                 log.info("Excel report created: {} ({} rows)", filePath, dataRows.size());
@@ -218,7 +223,7 @@ public class ExcelUtil {
             case STRING  -> cell.getStringCellValue().trim();
             case NUMERIC -> {
                 if (DateUtil.isCellDateFormatted(cell))
-                    yield cell.getLocalDateTimeCellValue().toString();
+                    yield cell.getDateCellValue().toString();
                 double v = cell.getNumericCellValue();
                 yield (v == Math.floor(v)) ? String.valueOf((long) v) : String.valueOf(v);
             }

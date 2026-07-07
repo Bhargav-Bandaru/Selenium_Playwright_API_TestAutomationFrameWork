@@ -1,4 +1,4 @@
-package com.expertrise.automation.TestNG;
+package com.expertrise.training.TestNG;
 
 import org.testng.IInvokedMethod;
 import org.testng.IInvokedMethodListener;

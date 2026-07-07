@@ -25,13 +25,13 @@ Feature: Login and Authentication
 
   @smoke @regression
   Scenario: Successful login with valid credentials
-    When the user enters email "Bhargav@expertrise.com" and password "Test@1234"
+    When the user enters email "expert@test.com" and password "expert@test.com"
     Then the user should be logged in successfully
     And the page title should contain "Automation Exercise"
 
   @regression
   Scenario: Login verifies the correct username in navigation
-    When the user enters email "Bhargav@expertrise.com" and password "Test@1234"
+    When the user enters email "expert@test.com" and password "expert@test.com"
     Then the user should be logged in as "Bhargav"
 
 #  @smoke @regression
@@ -51,8 +51,8 @@ Feature: Login and Authentication
     Then the user should be logged in successfully
 
     Examples:
-      | email                  | password  |
-      | Bhargav@expertrise.com | Test@1234 |
+      | email           | password   |
+      | expert@test.com | expert@123 |
 
 
   # ────────────────────────────────────────────────────────────────────────────
