@@ -1,0 +1,14 @@
+<!-- parallel='methods' — each method -->
+<!-- on its own thread               -->
+<suite name="Suite"
+       parallel="methods"
+       thread-count="3">
+    <test name="LoginTests">
+        <classes>
+            <class name="tests.LoginTests"/>
+        </classes>
+    </test>
+</suite>
+
+        <!-- parallel='classes' — each class -->
+        <!-- parallel='tests' — each <test>  -->

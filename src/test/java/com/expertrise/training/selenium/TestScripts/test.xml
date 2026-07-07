@@ -1,0 +1,15 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<suite name="Login Test Suite">
+    <!-- Parameters injected into LoginTest @Parameters("browserType","applicationUrl","userName","password") -->
+<!--    <parameter name="browserType" value="chrome"/>-->
+<!--    <parameter name="applicationUrl" value="https://automationexercise.com"/>-->
+    <parameter name="userName" value="bhargav@test.com"/>
+    <parameter name="password" value="Test@1234"/>
+    <test name="Login Test">
+        <classes>
+            <class name="com.expertrise.training.selenium.TestScripts.LoginTestFeature"/>
+        </classes>
+    </test>
+</suite>
+

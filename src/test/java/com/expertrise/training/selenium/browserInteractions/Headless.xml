@@ -1,0 +1,9 @@
+<!-- testng.xml -->
+<suite name="Suite">
+    <test name="HeadlessTest">
+        <parameter name="headless" value="true"/>
+        <classes>
+            <class name="com.expertrise.training.selenium.browserInteractions.ChromeBrowerProfileConfigurationTest"/>
+        </classes>
+    </test>
+</suite>

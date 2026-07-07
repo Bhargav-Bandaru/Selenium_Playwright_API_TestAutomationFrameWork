@@ -1,0 +1,23 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd" >
+<suite name="DemoSuite">
+
+    <!-- Define a <test> block -->
+    <test name="GroupExecutionDemo">
+
+        <!-- Group filtering -->
+        <groups>
+            <run>
+                <!-- Only run tests tagged as 'smoke' -->
+                <include name="smoke"/>
+
+            </run>
+        </groups>
+
+        <!-- Classes under this <test> -->
+        <classes>
+            <class name="com.example.Annotations"/>
+            <class name="com.example.DependensOn"/>
+        </classes>
+
+    </test>
+</suite>

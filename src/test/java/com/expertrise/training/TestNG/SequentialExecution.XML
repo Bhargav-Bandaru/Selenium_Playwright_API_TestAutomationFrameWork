@@ -1,0 +1,11 @@
+<!-- Runs tests ONE by ONE -->
+<suite name="Suite"
+       parallel="none">
+    <test name="LoginTest">
+        <classes>
+            <class name="tests.LoginTest"/>
+            <class name="tests.CartTest"/>
+        </classes>
+    </test>
+</suite>
+        <!-- Use when tests depend on each other -->
