@@ -1,44 +1,28 @@
 package com.expertrise.automation.runners;
 
-import io.cucumber.junit.platform.engine.Constants;
-import org.junit.platform.suite.api.*;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
 
 /**
- * RunCucumberTest — JUnit 5 Suite runner for the full ExpertRise BDD framework.
+ * JUnit 5 Cucumber Suite Runner.
+ * ALL configuration lives in junit-platform.properties.
+ * Do NOT add @ConfigurationParameter here — it overrides
+ * command-line system properties and breaks tag filtering.
  *
- * <p>Picks up all feature files from {@code src/test/resources/features}.
- * All Cucumber configuration lives in {@code junit-platform.properties}.</p>
- *
- * <p>Run commands:
- * <pre>
- *   mvn test                                          # all tests
- *   mvn test -Dcucumber.filter.tags="@smoke"          # smoke only
- *   mvn test -Dcucumber.filter.tags="@regression"     # regression only
- *   mvn test -Dcucumber.filter.tags="@api"            # API tests only
- *   mvn test -Dcucumber.filter.tags="@playwright"     # Playwright tests only
- *   mvn test -Dbrowser=firefox                        # override browser
- *   mvn test -Dheadless=true                          # headless mode (CI)
- * </pre>
+ * Commands:
+ *   mvn clean test                                        → all tests
+ *   mvn clean test -Dcucumber.filter.tags="@smoke"        → smoke only
+ *   mvn clean test -Dcucumber.filter.tags="@regression"   → regression only
+ *   mvn clean test -Dcucumber.filter.tags="@api"          → API tests only
+ *   mvn clean test -Dcucumber.filter.tags="@ui"           → UI tests only
+ *   mvn clean test -Dcucumber.filter.tags="@smoke and @api" → smoke API only
  */
 @Suite
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features")
-@ConfigurationParameter(
-    key   = Constants.PLUGIN_PROPERTY_NAME,
-    value = "pretty, " +
-            "json:target/cucumber.json, " +
-            "html:target/cucumber-reports.html, " +
-            "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"   // Allure integration
-)
-@ConfigurationParameter(
-    key   = Constants.GLUE_PROPERTY_NAME,
-    value = "com.expertrise.automation.stepDefinitions," +
-            "com.expertrise.automation.hooks"
-)
-@ConfigurationParameter(
-        key   = Constants.FILTER_TAGS_PROPERTY_NAME,
-        value = "@practice"
-)
 public class RunCucumberTest {
-    // Annotations drive everything — no body needed
+    // Zero @ConfigurationParameter annotations here.
+    // Any @ConfigurationParameter hardcoded here wins over
+    // system properties — which breaks -Dcucumber.filter.tags
 }

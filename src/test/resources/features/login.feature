@@ -25,7 +25,7 @@ Feature: Login and Authentication
 
   @smoke @regression
   Scenario: Successful login with valid credentials
-    When the user enters email "expert@test.com" and password "expert@test.com"
+    When the user enters email "expert@test.com" and password "expert@123"
     Then the user should be logged in successfully
     And the page title should contain "Automation Exercise"
 
@@ -84,7 +84,7 @@ Feature: Login and Authentication
   # SIGNUP SCENARIOS
   # ────────────────────────────────────────────────────────────────────────────
 
-  @smoke @regression
+  @regression
   Scenario: New user signup redirects to account creation
     When the user enters signup name "Jane Doe" and email "janedoe.new@test.com"
     Then the page title should contain "Automation Exercise"

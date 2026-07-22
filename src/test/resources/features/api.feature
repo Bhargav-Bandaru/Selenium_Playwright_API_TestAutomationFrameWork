@@ -38,7 +38,7 @@ Feature: User API Lifecycle
   # EXTENDED API SCENARIOS
   # ────────────────────────────────────────────────────────────────────────────
 
-  @smoke @regression
+  @regression
   Scenario: API returns 404 for non-existent user
     Given the API service is running
     When I request user with id "99999"
